@@ -1,22 +1,35 @@
-import face_recognition 
+import PIL.Image
+import PIL.ImageOps
+import numpy as np
+import face_recognition
 import cv2
 
-raed_img = face_recognition.load_image_file('img5.jpg')
-brother_encoding = face_recognition.face_encodings(raed_img) #the 0 grabs the first face in the photo
-# print(f"Found {len(brother_encoding)} faces in the photo") run to see if the picture is not the issue
+img = PIL.Image.open('img5.jpg').convert('RGB') # converts img to rgb format
+img = PIL.ImageOps.exif_transpose(img)  # fixes phone camera rotation
+raed_img = np.array(img)
 
-frame_count = 0
+encodings = face_recognition.face_encodings(raed_img)
+print(f"Found {len(encodings)} faces")
+brother_encoding = encodings[0] # grabs the first face found in th photo
+
+frame_count = 0 
+face_encoding = []
+face_locations = []
 
 webcam = cv2.VideoCapture(0) # use 1 if you have external webcam
 while True:
     ret, frame = webcam.read()
     frame_count += 1
-    face_locations = face_recognition.face_locations(frame)
-    face_encoding = face_recognition.face_encodings(frame, face_locations)
+    if frame_count % 2 == 0: # analyzes every other fram (to make it fasterish)
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        small_locations = face_recognition.face_locations(small_frame, model='hog') # hog model is faster but less accurate then default
+        face_encoding = face_recognition.face_encodings(small_frame, small_locations)
+        face_locations = [(top*4, right*4, bottom*4, left*4) for (top, right, bottom, left) in small_locations]
+
 
     for(top, right, bottom, left), face_encoding in zip(face_locations, face_encoding):
         match = face_recognition.compare_faces([brother_encoding], face_encoding)[0]
-        name = 'Brother' if match else 'Unknown'
+        name = 'Freaky ash' if match else 'Unknown'
 
         #draw box around face and labels it
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
