@@ -13,7 +13,6 @@ encodings = face_recognition.face_encodings(raed_img)
 print(f"Found {len(encodings)} faces")
 brother_encoding = encodings[0] # grabs the first face found in the photo
 
-frame_count = 0 
 face_encoding = []
 face_locations = []
 stable_match = False
@@ -23,12 +22,11 @@ match_history = deque(maxlen=15) # keeps history of last 5 match results
 webcam = cv2.VideoCapture(0) # use 1 if you have external webcam
 while True:
     ret, frame = webcam.read()
-    frame_count += 1
-    if frame_count % 2 == 0: # analyzes every other fram (to make it fasterish)
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-        small_locations = face_recognition.face_locations(small_frame, model='hog') # hog model is faster but less accurate then default
-        face_encoding = face_recognition.face_encodings(small_frame, small_locations)
-        face_locations = [(top*4, right*4, bottom*4, left*4) for (top, right, bottom, left) in small_locations]
+
+    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    small_locations = face_recognition.face_locations(small_frame, model='hog') # hog model is faster but less accurate then default
+    face_encoding = face_recognition.face_encodings(small_frame, small_locations)
+    face_locations = [(top*4, right*4, bottom*4, left*4) for (top, right, bottom, left) in small_locations]
 
 
     for(top, right, bottom, left), face_encoding in zip(face_locations, face_encoding):
@@ -37,9 +35,9 @@ while True:
 
         confidence = match_history.count(True) / len(match_history) # only label if most of the frames agree
         
-        if confidence >= 0.50:
+        if confidence >= 0.80:
             stable_match = True
-        elif confidence < 0.50:
+        elif confidence < 0.80:
             stable_match = False
 
 
